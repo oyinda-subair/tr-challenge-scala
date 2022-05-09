@@ -1,0 +1,48 @@
+version: '3.1'
+
+services:
+
+  java:
+    image: openjdk:11
+    volumes:
+      - ./:/app
+    command: bash -c "cd /app && java -jar partner-service-1.0.1-all.jar --port=8032"
+    ports:
+      - 8032:8032
+
+  database:
+    image: mongo
+    restart: always
+    container_name: mongo-server
+    environment:
+      MONGO_INITDB_ROOT_DATABASE: candlesticktest
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./mongo-volume:/data/db
+    networks:
+      - mongo-compose-network
+    ports:
+      - "27017:27017"
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    depends_on:
+      - database
+    networks:
+      - mongo-compose-network
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo-server
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: q
+      ME_CONFIG_MONGODB_PORT: 27017
+
+
+networks:
+  mongo-compose-network:
+    driver: bridge
