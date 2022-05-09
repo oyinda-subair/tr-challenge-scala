@@ -1,6 +1,5 @@
 package com.tr.candlestick.models
 
-import akka.util.Collections
 import com.tr.candlestick.config.AppConfig.ISIN
 import com.tr.candlestick.database.MongoFactory
 import com.tr.candlestick.messages.EventType._
@@ -8,14 +7,11 @@ import com.tr.candlestick.messages._
 import org.mongodb.scala._
 import org.mongodb.scala.bson.BsonDateTime
 import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.ObservableImplicits
 import play.api.libs.json._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.time._
-import scala.collection.immutable.{AbstractSeq, LinearSeq}
-import scala.util.{Failure, Success}
 
 class CandlestickRepositoryImpl(mongoFactory: MongoFactory) extends CandlestickRepository {
   val instrumentCollection: MongoCollection[Document] = mongoFactory.Instrument.collection
@@ -70,7 +66,7 @@ class CandlestickRepositoryImpl(mongoFactory: MongoFactory) extends CandlestickR
     val doc: Document = Document("isin" -> isin, "description" -> description, "type" -> "instrument")
 
     for {
-      _ <- instrumentCollection.insertOne(doc).toFuture()
+      result <- instrumentCollection.insertOne(doc).toFuture()
     } yield ()
   }
 
@@ -79,7 +75,7 @@ class CandlestickRepositoryImpl(mongoFactory: MongoFactory) extends CandlestickR
     val instrumentQuery = instrumentCollection.deleteOne(equal("isin", event.data.isin)).toFuture()
 
     for {
-      _ <- quoteQuery
+      result <- quoteQuery
       _ <- instrumentQuery
     } yield ()
   }
