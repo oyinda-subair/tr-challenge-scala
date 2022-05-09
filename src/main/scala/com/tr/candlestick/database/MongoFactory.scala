@@ -1,5 +1,6 @@
 package com.tr.candlestick.database
 
+import com.typesafe.config.ConfigFactory
 import org.bson.{BsonDocument, BsonInt64}
 import org.bson.conversions.Bson
 import org.mongodb.scala._
@@ -12,7 +13,13 @@ object MongoFactory {
     mongoClientSettings
   }
   private val mongoClient = MongoClient(getMongoClientSettings)
-  private val database: MongoDatabase = mongoClient.getDatabase("candlestick")
+
+  private val config = ConfigFactory.load()
+  private val app = config.getConfig("app")
+
+  val databaseString: String = app.getString("database")
+
+  private val database: MongoDatabase = mongoClient.getDatabase(databaseString)
 
   try{
     val command: Bson = new BsonDocument("ping", new BsonInt64(1))
