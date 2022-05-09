@@ -6,7 +6,7 @@
 ## Framework Requirements
 - JVM running on your local machine
 - SBT
-- Docker v2
+- Docker v3
 - An IDE of your choice
 
 
