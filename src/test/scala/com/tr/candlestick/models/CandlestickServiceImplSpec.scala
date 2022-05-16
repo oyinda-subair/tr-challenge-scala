@@ -1,86 +1,83 @@
 package com.tr.candlestick.models
 
+import com.tr.candlestick.config.AppConfig.InstrumentCollection
 import com.tr.candlestick.messages.EventType
 import com.tr.candlestick.testkit.CandlestickTestkit
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.mongodb.scala._
-import org.mongodb.scala.model.Filters._
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import play.api.libs.json._
+import org.scalatest.time.{Millis, Seconds, Span}
 
-class CandlestickServiceImplSpec extends AnyWordSpec with Matchers with CandlestickTestkit with ScalaFutures {
+class CandlestickServiceImplSpec extends AnyWordSpec
+  with Matchers
+  with CandlestickTestkit
+  with ScalaFutures
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach
+  with Eventually {
+
+  implicit val defaultPatience: PatienceConfig =
+    PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
+
+  val instrumentCollection: InstrumentCollection = factory.Instrument(db)
 
   "Add Events CandlestickServiceImpl" when {
-    val candlestickRepository = new CandlestickRepositoryImpl(collections)
-    val isin = getIsin
-    eventInstrumentStream(isin, EventType.ADD, {event =>
-      candlestickRepository.addOrDeleteInstrument(event)
-      println(event)
-    })
-
-    eventQuoteStream(isin, {event =>
-      candlestickRepository.addQuote(isin, event)
-      println(event)
-    })
 
     "Instrument event" should {
       "exist in database" in {
 
-        val result = candlestickRepository.instrumentCollection.find(org.mongodb.scala.model.Filters.equal("isin", isin)).toFuture()
-
-        whenReady(result) { s =>
+        whenReady(instrumentCollection.find(org.mongodb.scala.model.Filters.equal("isin", isin)).toFuture()) { s =>
           s.isEmpty shouldBe false
+          s.length shouldEqual 1
+          s.map {doc =>
+            val parseJsonString = Json.parse(doc.toJson())
+
+            (parseJsonString \ "isin").as[String] should be(isin)
+          }
         }
       }
     }
 
     "Quote Event" should {
       "add new quote event" in {
-        val result = candlestickRepository.fetch(isin)
 
-        whenReady(result) { s =>
-          s.head.openTimestamp isBefore s.head.closeTimestamp
+        whenReady(candlestickRepository.fetchLastThirtyMinutesByIsin(isin)) { candlesticks =>
+          candlesticks.head.openTimestamp isBefore candlesticks.head.closeTimestamp
         }
       }
     }
   }
 
   "Delete Event" when {
-    val candlestickRepository = new CandlestickRepositoryImpl(collections)
-    val isin = getIsin
-    eventInstrumentStream(isin, EventType.ADD, {event =>
-      candlestickRepository.addOrDeleteInstrument(event)
-      println(event)
-    })
-
-    eventQuoteStream(isin, {event =>
-      candlestickRepository.addQuote(isin, event)
-      println(event)
-    })
-
-    eventInstrumentStream(isin, EventType.DELETE, {event =>
-      candlestickRepository.addOrDeleteInstrument(event)
-      println(event)
-    })
 
     "Instrument event" should {
-      "exist in database" in {
+      "not exist in database" in {
+        eventInstrumentStream(isin, EventType.DELETE, {event =>
+          candlestickRepository.saveOrDeleteInstrumentEvent(event)
+        })
 
-        val result = candlestickRepository.instrumentCollection.find(org.mongodb.scala.model.Filters.equal("isin", isin)).toFuture()
+        eventually {
 
-        whenReady(result) { s =>
-          s.isEmpty shouldBe true
+          whenReady(instrumentCollection.find(org.mongodb.scala.model.Filters.equal("isin", isin)).toFuture()) { s =>
+            s.isEmpty shouldBe true
+          }
         }
       }
     }
 
     "Quote Event" should {
-      "add new quote event" in {
-        val result = candlestickRepository.fetch(isin)
+      "not exist in database" in {
+        eventInstrumentStream(isin, EventType.DELETE, {event =>
+          candlestickRepository.saveOrDeleteInstrumentEvent(event)
+        })
 
-        whenReady(result) { s =>
-          println(s)
-          s.isEmpty shouldBe true
+        eventually {
+          whenReady(candlestickRepository.fetchLastThirtyMinutesByIsin(isin)) { s =>
+            s.isEmpty shouldBe true
+          }
         }
       }
     }

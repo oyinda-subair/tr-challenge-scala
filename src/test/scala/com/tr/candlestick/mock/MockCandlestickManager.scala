@@ -10,6 +10,6 @@ import scala.concurrent.Future
 class MockCandlestickManager(candlestickService: CandlestickRepository) extends CandlestickManager {
   override def getCandlesticks(isin: String): Future[List[Candlestick]] =
     for {
-      agg <- candlestickService.fetch(isin)
+      agg <- candlestickService.fetchLastThirtyMinutesByIsin(isin)
     } yield agg.toList
 }

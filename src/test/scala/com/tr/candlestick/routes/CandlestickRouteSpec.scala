@@ -11,14 +11,12 @@ class CandlestickRouteSpec extends AnyWordSpec with Matchers with ScalatestRoute
 
   "Candlestick Route" should {
     "get list of candlestick when isin is provided" in {
-      val isin = getIsin
       eventInstrumentStream(isin, EventType.ADD, { event =>
-        mockCandlestickServiceImpl.addOrDeleteInstrument(event)
+        mockCandlestickServiceImpl.saveOrDeleteInstrumentEvent(event)
       })
 
       eventQuoteStream(isin, { event =>
-        mockCandlestickServiceImpl.addQuote(isin, event)
-        println(event)
+        mockCandlestickServiceImpl.saveQuoteEvent(isin, event)
       })
 
       Get(s"/candlesticks?isin=$isin") ~> routes ~> check {
