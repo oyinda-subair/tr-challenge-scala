@@ -6,18 +6,14 @@ import com.tr.candlestick.testkit.CandlestickTestkit
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.mongodb.scala._
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json._
 import org.scalatest.time.{Millis, Seconds, Span}
 
 class CandlestickServiceImplSpec extends AnyWordSpec
   with Matchers
   with CandlestickTestkit
-  with ScalaFutures
-  with BeforeAndAfterAll
-  with BeforeAndAfterEach
-  with Eventually {
+  with ScalaFutures {
 
   implicit val defaultPatience: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
@@ -59,11 +55,8 @@ class CandlestickServiceImplSpec extends AnyWordSpec
           candlestickRepository.saveOrDeleteInstrumentEvent(event)
         })
 
-        eventually {
-
-          whenReady(instrumentCollection.find(org.mongodb.scala.model.Filters.equal("isin", isin)).toFuture()) { s =>
-            s.isEmpty shouldBe true
-          }
+        whenReady(instrumentCollection.find(org.mongodb.scala.model.Filters.equal("isin", isin)).toFuture()) { s =>
+          s.isEmpty shouldBe true
         }
       }
     }
@@ -74,10 +67,8 @@ class CandlestickServiceImplSpec extends AnyWordSpec
           candlestickRepository.saveOrDeleteInstrumentEvent(event)
         })
 
-        eventually {
-          whenReady(candlestickRepository.fetchLastThirtyMinutesByIsin(isin)) { s =>
-            s.isEmpty shouldBe true
-          }
+        whenReady(candlestickRepository.fetchLastThirtyMinutesByIsin(isin)) { s =>
+          s.isEmpty shouldBe true
         }
       }
     }
