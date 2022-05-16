@@ -1,8 +1,7 @@
 package com.tr.candlestick.database
 
+import com.tr.candlestick.config.AppConfig.{InstrumentCollection, QuoteCollection}
 import com.typesafe.config.ConfigFactory
-import org.bson.{BsonDocument, BsonInt64}
-import org.bson.conversions.Bson
 import org.mongodb.scala._
 
 object MongoFactory {
@@ -17,30 +16,19 @@ object MongoFactory {
   private val config = ConfigFactory.load()
   private val app = config.getConfig("app")
 
-  val databaseString: String = app.getString("database")
-
+  private val databaseString: String = app.getString("database")
   private val database: MongoDatabase = mongoClient.getDatabase(databaseString)
 
-  try{
-    val command: Bson = new BsonDocument("ping", new BsonInt64(1))
-    val commandResult = database.runCommand(command)
-    println("Connected successfully to server.")
-  } catch {
-    case ex: MongoException =>
-      System.err.println("An error occurred while attempting to run a command: " + ex)
-  }
+  def candlestickDatabase: MongoDatabase = database
 
-  val candlestickDatabase: MongoDatabase = database
 }
 
 class MongoFactory {
-  import com.tr.candlestick.database.MongoFactory.candlestickDatabase
-
   object Instrument {
-    val collection: MongoCollection[Document] = candlestickDatabase.getCollection("instrument_events")
+    def apply(db: MongoDatabase): InstrumentCollection = db.getCollection("instrument_events")
   }
 
   object Quote {
-    val collection: MongoCollection[Document] = candlestickDatabase.getCollection("quote_events")
+    def apply(db: MongoDatabase): QuoteCollection = db.getCollection("quote_events")
   }
 }

@@ -1,17 +1,19 @@
+# Trade Republic Coding Challenge
 
-
+This challenge has been rewritten in Scala and uses mongodb as datastore
 
 # Setup
 
 ## Framework Requirements
 - JVM running on your local machine
 - SBT
+- Akka Http
 - Docker v3
 - An IDE of your choice
 
 
 ### Running the app
-The app requires mongoDB as database which has been added to the docker-compose file
+The app requires mongoDB as database and partner service which has been added to the docker-compose file
 ```shell
 docker-compose up -d
 ```
